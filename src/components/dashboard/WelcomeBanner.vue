@@ -6,7 +6,7 @@ interface Props {
   suggestion?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   suggestion: ''
 })
 
@@ -35,7 +35,7 @@ const today = computed(() => {
     <div class="welcome-content">
       <div class="welcome-text">
         <h1 class="welcome-greeting">
-          {{ greeting }}，{{ user?.nickname || user?.username }}
+          {{ greeting }}<template v-if="user">，{{ user.nickname || user.username }}</template>
         </h1>
         <p class="welcome-date">{{ today }}</p>
         <p v-if="suggestion" class="welcome-suggestion">{{ suggestion }}</p>
@@ -56,7 +56,7 @@ const today = computed(() => {
   position: relative;
   border-radius: var(--card-radius);
   overflow: hidden;
-  padding: 32px var(--spacing);
+  padding: var(--spacing);
   background: var(--dashboard-gradient);
   color: #fff;
 }
@@ -107,5 +107,26 @@ const today = computed(() => {
 
 .illustration-emoji {
   font-size: 40px;
+}
+
+@media (max-width: 640px) {
+  .welcome-banner {
+    padding: 20px 16px;
+  }
+  .welcome-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .welcome-greeting {
+    font-size: 18px;
+  }
+  .welcome-suggestion {
+    max-width: 100%;
+  }
+  .default-illustration {
+    width: 56px;
+    height: 56px;
+    margin-top: 16px;
+  }
 }
 </style>
