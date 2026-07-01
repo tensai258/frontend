@@ -20,8 +20,26 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/layout/MainLayout.vue'),
-      redirect: '/chat',
+      redirect: '/dashboard/student',
       children: [
+        {
+          path: 'dashboard/student',
+          name: 'StudentDashboard',
+          component: () => import('@/views/dashboard/StudentDashboard.vue'),
+          meta: { title: '学习Dashboard', icon: 'HomeFilled' }
+        },
+        {
+          path: 'dashboard/teacher',
+          name: 'TeacherDashboard',
+          component: () => import('@/views/dashboard/TeacherDashboard.vue'),
+          meta: { title: '教学Dashboard', icon: 'HomeFilled' }
+        },
+        {
+          path: 'dashboard/admin',
+          name: 'AdminDashboard',
+          component: () => import('@/views/dashboard/AdminDashboard.vue'),
+          meta: { title: '管理Dashboard', icon: 'HomeFilled' }
+        },
         {
           path: 'chat',
           name: 'Chat',
@@ -79,6 +97,14 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
+
+  // Role-based dashboard redirect
+  if (to.path === '/') {
+    const role = userStore.user?.role
+    if (role === 'teacher') return next('/dashboard/teacher')
+    if (role === 'admin') return next('/dashboard/admin')
+    return next('/dashboard/student')
+  }
 
   if (to.meta.title) {
     document.title = `${to.meta.title} - 智学伴行`

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
@@ -10,12 +10,20 @@ const { user, logout, isAdmin } = useAuth()
 const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
 
-const menuItems = computed(() => [
-  { path: '/chat', title: '智能答疑', icon: 'ChatDotRound' },
-  { path: '/assignments', title: '作业中心', icon: 'Document' },
-  { path: '/analysis/student', title: '学情分析', icon: 'TrendCharts' },
-  ...(isAdmin.value ? [{ path: '/admin', title: '管理后台', icon: 'Setting' }] : [])
-])
+const menuItems = computed(() => {
+  const dashboardPath =
+    user.value?.role === 'teacher' ? '/dashboard/teacher' :
+    user.value?.role === 'admin' ? '/dashboard/admin' :
+    '/dashboard/student'
+
+  return [
+    { path: dashboardPath, title: '工作台', icon: 'HomeFilled' },
+    { path: '/chat', title: '智能答疑', icon: 'ChatDotRound' },
+    { path: '/assignments', title: '作业中心', icon: 'Document' },
+    { path: '/analysis/student', title: '学情分析', icon: 'TrendCharts' },
+    ...(isAdmin.value ? [{ path: '/admin', title: '管理后台', icon: 'Setting' }] : [])
+  ]
+})
 
 const handleCommand = (command: string) => {
   if (command === 'logout') {
@@ -28,6 +36,12 @@ const handleCommand = (command: string) => {
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
+
+const setRoleTheme = (role: string | undefined) => {
+  document.documentElement.dataset.role = role || 'student'
+}
+
+watch(() => user.value?.role, setRoleTheme, { immediate: true })
 </script>
 
 <template>
