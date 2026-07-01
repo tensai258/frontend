@@ -23,11 +23,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const chartOption = computed(() => ({
-  title: {
-    text: props.title,
-    textStyle: { fontSize: 16, fontWeight: 600, color: '#1a1a2e' },
-    left: 'center'
-  },
   tooltip: {
     formatter: (params: any) =>
       `${params.name}<br/>掌握度: <strong>${params.value[2]}%</strong>`
