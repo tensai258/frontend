@@ -1,0 +1,127 @@
+/* ========================================
+   智学伴行 Dashboard 设计系统
+   ======================================== */
+
+/* Role Theme Variables */
+:root[data-role="student"] {
+  --dashboard-primary: #4FACFE;
+  --dashboard-primary-light: #4FACFE15;
+  --dashboard-secondary: #00E5FF;
+  --dashboard-accent: #FF6D00;
+  --dashboard-gradient: linear-gradient(135deg, #4FACFE 0%, #00E5FF 100%);
+}
+
+:root[data-role="teacher"] {
+  --dashboard-primary: #7C4DFF;
+  --dashboard-primary-light: #7C4DFF15;
+  --dashboard-secondary: #B388FF;
+  --dashboard-accent: #FF4081;
+  --dashboard-gradient: linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%);
+}
+
+:root[data-role="admin"] {
+  --dashboard-primary: #546E7A;
+  --dashboard-primary-light: #546E7A15;
+  --dashboard-secondary: #90A4AE;
+  --dashboard-accent: #FFAB00;
+  --dashboard-gradient: linear-gradient(135deg, #546E7A 0%, #90A4AE 100%);
+}
+
+/* Default (student) */
+:root {
+  --dashboard-primary: #4FACFE;
+  --dashboard-primary-light: #4FACFE15;
+  --dashboard-secondary: #00E5FF;
+  --dashboard-accent: #FF6D00;
+  --dashboard-gradient: linear-gradient(135deg, #4FACFE 0%, #00E5FF 100%);
+
+  --card-radius: 12px;
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --spacing: 24px;
+  --text-primary: #1a1a2e;
+  --text-secondary: #606266;
+  --text-muted: #909399;
+  --bg-page: #f0f2f5;
+  --bg-card: #ffffff;
+}
+
+/* Dashboard Page Container */
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  max-width: 1400px;
+}
+
+/* Dashboard Card */
+.dashboard-card {
+  background: var(--bg-card);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: var(--spacing);
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.dashboard-card .card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Two Column Grid */
+.dashboard-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing);
+}
+
+/* Action Buttons Row */
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dashboard-actions .el-button {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* Stat Number */
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.5px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.stat-change {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.stat-change.up { color: #67C23A; }
+.stat-change.down { color: #F56C6C; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
