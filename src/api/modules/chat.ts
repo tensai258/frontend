@@ -24,9 +24,13 @@ export const chatApi = {
     return request.delete(`/chat/session/${sessionId}`)
   },
 
-  // SSE流式接口URL
+  getSessions() {
+    return Promise.resolve([
+      { id: 'sess_001', title: '默认会话', updatedAt: new Date().toISOString() }
+    ])
+  },
+
   getStreamUrl() {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    return `${baseUrl}/chat/stream`
+    return '/api/chat/stream'
   }
 }

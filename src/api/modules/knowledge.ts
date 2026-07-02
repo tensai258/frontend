@@ -16,7 +16,7 @@ export const knowledgeApi = {
   },
 
   getDocuments(params?: { courseId?: number; page?: number; size?: number }) {
-    return request.get<{ records: KnowledgeDoc[]; total: number }>('/knowledge/documents', { params })
+    return request.get<{ list: KnowledgeDoc[]; total: number }>('/knowledge/documents', { params })
   },
 
   deleteDocument(id: number) {
@@ -24,10 +24,6 @@ export const knowledgeApi = {
   },
 
   search(params: { keyword: string; page?: number; size?: number }) {
-    return request.get<{ records: KnowledgeDoc[]; total: number }>('/knowledge/search', { params })
-  },
-
-  vectorize(docId: number) {
-    return request.post(`/knowledge/vectorize/${docId}`)
+    return request.get<{ list: KnowledgeDoc[]; total: number }>('/knowledge/search', { params })
   }
 }

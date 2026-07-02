@@ -1,29 +1,63 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import WrongQuestionCard from '@/components/student/WrongQuestionCard.vue'
+import { ref, computed, onMounted } from 'vue'
+import { questionApi } from '@/api/modules/question'
+import type { WrongQuestionItem } from '@/api/modules/question'
+import { ElMessage } from 'element-plus'
 
-type SourceFilter = 'all' | 'question_bank' | 'assignment'
-const sourceFilter = ref<SourceFilter>('all')
+type StatusFilter = 'all' | 'unmastered' | 'mastered'
+const statusFilter = ref<StatusFilter>('all')
 
-const wrongQuestions = [
-  { id: 1, title: '二叉树的中序遍历', source: 'question_bank' as const, sourceName: '题库中心', knowledge: '递归', wrongCount: 2, difficulty: 3, lastError: '忘记了递归终止条件', status: 'unfixed' as const },
-  { id: 2, title: '动态规划-背包问题', source: 'assignment' as const, sourceName: '数据结构第三章作业', knowledge: '动态规划', wrongCount: 1, difficulty: 4, status: 'unfixed' as const },
-  { id: 3, title: '链表反转', source: 'question_bank' as const, sourceName: '题库中心', knowledge: '链表', wrongCount: 1, difficulty: 2, lastError: '指针指向错误', status: 'reviewing' as const },
-  { id: 4, title: '快速排序实现', source: 'assignment' as const, sourceName: '算法设计作业', knowledge: '排序', wrongCount: 3, difficulty: 3, lastError: '分区逻辑错误', status: 'unfixed' as const },
-  { id: 5, title: '图的DFS遍历', source: 'question_bank' as const, sourceName: '题库中心', knowledge: '图论', wrongCount: 1, difficulty: 4, status: 'mastered' as const }
-]
+const wrongList = ref<WrongQuestionItem[]>([])
+const loading = ref(false)
 
 const filteredQuestions = computed(() => {
-  if (sourceFilter.value === 'all') return wrongQuestions
-  return wrongQuestions.filter(q => q.source === sourceFilter.value)
+  if (statusFilter.value === 'all') return wrongList.value
+  if (statusFilter.value === 'mastered') return wrongList.value.filter(q => q.mastered === 1)
+  return wrongList.value.filter(q => q.mastered === 0)
 })
 
-const totalWrong = wrongQuestions.length
-const knowledgeCount = computed(() => new Set(wrongQuestions.map(q => q.knowledge)).size)
+const totalWrong = computed(() => wrongList.value.length)
+const unmasteredCount = computed(() => wrongList.value.filter(q => q.mastered === 0).length)
 
-const handleRetry = (_id: number) => {
-  // navigate to practice mode when ready
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await questionApi.getWrongList({ page: 1, size: 100 })
+    wrongList.value = res.list || []
+  } catch {
+    ElMessage.error('加载错题失败，请确保已登录且后端服务已启动')
+  } finally {
+    loading.value = false
+  }
 }
+
+const handleMarkMastered = async (id: number) => {
+  try {
+    await questionApi.markWrongMastered(id)
+    const item = wrongList.value.find(q => q.id === id)
+    if (item) item.mastered = 1
+    ElMessage.success('已标记为掌握')
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+const handleDelete = async (id: number) => {
+  try {
+    await questionApi.deleteWrong(id)
+    wrongList.value = wrongList.value.filter(q => q.id !== id)
+    ElMessage.success('已删除')
+  } catch {
+    ElMessage.error('删除失败')
+  }
+}
+
+const diffStars = (d?: number) => {
+  if (!d) return 1
+  return Math.min(5, Math.ceil(d))
+}
+
+onMounted(fetchData)
 </script>
 
 <template>
@@ -31,24 +65,42 @@ const handleRetry = (_id: number) => {
     <div class="section-header">
       <div>
         <h2>错题集</h2>
-        <p class="section-desc">共 {{ totalWrong }} 道错题 · 覆盖 {{ knowledgeCount }} 个知识点</p>
+        <p class="section-desc">共 {{ totalWrong }} 道错题 · {{ unmasteredCount }} 道未掌握</p>
       </div>
     </div>
 
     <div class="source-tabs">
       <span
-        v-for="opt in [{ k: 'all', l: '全部错题' }, { k: 'question_bank', l: '来自题库' }, { k: 'assignment', l: '来自作业' }]"
+        v-for="opt in [{ k: 'all', l: '全部' }, { k: 'unmastered', l: '未掌握' }, { k: 'mastered', l: '已掌握' }]"
         :key="opt.k"
-        class="source-tab" :class="{ active: sourceFilter === opt.k }"
-        @click="sourceFilter = opt.k as SourceFilter"
+        class="source-tab" :class="{ active: statusFilter === opt.k }"
+        @click="statusFilter = opt.k as StatusFilter"
       >{{ opt.l }}</span>
     </div>
 
-    <div class="wq-list">
-      <WrongQuestionCard
-        v-for="wq in filteredQuestions" :key="wq.id"
-        v-bind="wq" @retry="handleRetry"
-      />
+    <div v-loading="loading" class="wq-list">
+      <div v-for="wq in filteredQuestions" :key="wq.id" class="wq-card" :style="{ borderLeftColor: wq.mastered === 1 ? '#67C23A' : '#F56C6C' }">
+        <div class="wq-header">
+          <span class="wq-status-dot" :style="{ background: wq.mastered === 1 ? '#67C23A' : '#F56C6C' }"></span>
+          <span class="wq-title">{{ wq.content?.slice(0, 50) || '题目' }}{{ (wq.content?.length || 0) > 50 ? '...' : '' }}</span>
+          <el-tag v-if="wq.category" size="small">{{ wq.category }}</el-tag>
+        </div>
+        <div class="wq-meta">
+          <span>做错 {{ wq.wrongCount }} 次</span>
+          <span v-if="wq.difficulty">难度 {{ '⭐'.repeat(diffStars(wq.difficulty)) }}</span>
+          <span>你的答案: {{ wq.userAnswer }}</span>
+          <span v-if="wq.answer">正确答案: {{ wq.answer }}</span>
+        </div>
+        <div class="wq-actions">
+          <el-button size="small" type="primary" plain round @click="handleMarkMastered(wq.id)" v-if="wq.mastered === 0">
+            标记为掌握
+          </el-button>
+          <el-button size="small" type="danger" plain round @click="handleDelete(wq.id)">
+            删除
+          </el-button>
+        </div>
+      </div>
+      <el-empty v-if="!loading && filteredQuestions.length === 0" description="暂无错题" />
     </div>
   </div>
 </template>
@@ -88,5 +140,54 @@ const handleRetry = (_id: number) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.wq-card {
+  background: var(--bg-card);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  border-left: 4px solid #ccc;
+  transition: all 0.3s;
+}
+
+.wq-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.wq-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wq-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wq-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wq-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.wq-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

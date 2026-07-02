@@ -1,11 +1,11 @@
 import request from '../request'
-import type { Assignment, AssignmentSubmission } from '@/types'
+import type { Assignment } from '@/types'
 
 export interface AssignmentListResult {
-  records: Assignment[]
+  list: Assignment[]
   total: number
-  size: number
-  current: number
+  pageSize: number
+  pageNum: number
 }
 
 export const assignmentApi = {
@@ -44,9 +44,8 @@ export const assignmentApi = {
 }
 
 export interface SubmitData {
-  answers?: Record<string, string>
-  content?: string
-  attachments?: string[]
+  answers?: string
+  timeSpent?: number
 }
 
 export interface CreateAssignmentData {

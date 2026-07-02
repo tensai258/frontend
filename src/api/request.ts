@@ -1,17 +1,24 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosResponse, CreateAxiosDefaults } from 'axios'
 import { ElMessage } from 'element-plus'
 import { storage } from '@/utils/storage'
 
-const request: AxiosInstance = axios.create({
+interface CustomAxiosInstance {
+  get<T = any>(url: string, config?: any): Promise<T>
+  post<T = any>(url: string, data?: any, config?: any): Promise<T>
+  put<T = any>(url: string, data?: any, config?: any): Promise<T>
+  delete<T = any>(url: string, config?: any): Promise<T>
+}
+
+const http = axios.create({
   baseURL: '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }
-})
+} as CreateAxiosDefaults)
 
 // 请求拦截器
-request.interceptors.request.use(
+http.interceptors.request.use(
   (config) => {
     const token = storage.get<string>('token')
     if (token && config.headers) {
@@ -25,7 +32,7 @@ request.interceptors.request.use(
 )
 
 // 响应拦截器
-request.interceptors.response.use(
+http.interceptors.response.use(
   (response: AxiosResponse) => {
     const { code, message, data } = response.data
     if (code === 200 || code === 0) {
@@ -37,11 +44,9 @@ request.interceptors.response.use(
   (error: AxiosError) => {
     const { response } = error
     if (response) {
-      const status = response.status
-      const data = response.data as any
-      // 如果后端返回了带 code 的错误响应
-      if (data && data.message) {
-        ElMessage.error(data.message)
+      const { status, data } = response
+      if (data && (data as any).message) {
+        ElMessage.error((data as any).message)
       } else {
         switch (status) {
           case 401:
@@ -69,5 +74,7 @@ request.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+const request = http as unknown as CustomAxiosInstance
 
 export default request

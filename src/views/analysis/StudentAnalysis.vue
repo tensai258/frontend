@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { analysisApi } from '@/api/modules/analysis'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import ReportSection from '@/components/student/ReportSection.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -9,101 +12,135 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, GridComponent, CanvasRenderer])
 
-interface KnowledgeItem {
-  name: string
-  level: number
-  label: string
-  rate: number
+const userStore = useUserStore()
+
+interface AnalysisData {
+  overallScore?: number
+  totalQuestions?: number
+  correctQuestions?: number
+  wrongQuestions?: number
+  correctRate?: number
+  knowledgeMastery?: Array<{
+    knowledgeName: string
+    masteryRate: number
+    level: string
+    totalQuestions: number
+  }>
+  trend?: Array<{
+    date: string
+    correctRate: number
+    totalCount: number
+  }>
+  weakPoints?: string[]
+  strongPoints?: string[]
+  suggestion?: string
 }
 
-const overview = {
-  totalQuestions: 156,
-  totalKnowledge: 12,
-  correctRate: 76,
-  grade: 'B+',
-  studyDays: 42,
-  dailyAvg: 3.7,
-  totalHours: 12.5,
-  avgPerQuestion: 4.8,
-  peakTime: '晚上 20:00 - 22:00'
+const analysis = ref<AnalysisData | null>(null)
+const loading = ref(false)
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const studentId = userStore.user?.id
+    if (studentId) {
+      const res = await analysisApi.getStudentAnalysis(studentId) as any
+      analysis.value = res
+    }
+  } catch {
+    ElMessage.error('加载分析数据失败，请确保已登录且后端服务已启动')
+  } finally {
+    loading.value = false
+  }
 }
 
-const knowledgeList: KnowledgeItem[] = [
-  { name: '数组与链表', level: 5, label: '优秀', rate: 92 },
-  { name: '排序算法', level: 4, label: '良好', rate: 80 },
-  { name: '指针操作', level: 4, label: '良好', rate: 78 },
-  { name: '图论基础', level: 3, label: '一般', rate: 65 },
-  { name: '动态规划', level: 2, label: '薄弱', rate: 38 },
-  { name: '递归算法', level: 1, label: '需加强', rate: 45 }
-]
+const gradeFromRate = (rate?: number) => {
+  if (!rate) return 'N/A'
+  if (rate >= 90) return 'A'
+  if (rate >= 80) return 'B+'
+  if (rate >= 70) return 'B'
+  if (rate >= 60) return 'C'
+  return 'D'
+}
 
-const levelStars = (l: number) => '⭐'.repeat(l)
+const levelText = (level?: string) => {
+  const map: Record<string, string> = { '优秀': '优秀', '良好': '良好', '中等': '一般', '薄弱': '薄弱', '未掌握': '需加强' }
+  return map[level || ''] || level || '未知'
+}
 
-const weeks = ['第1周', '第2周', '第3周', '第4周']
-const weeklyRates = [68, 72, 74, 76]
+const levelStars = (rate?: number) => {
+  if (!rate) return '⭐'
+  if (rate >= 90) return '⭐⭐⭐⭐⭐'
+  if (rate >= 80) return '⭐⭐⭐⭐'
+  if (rate >= 70) return '⭐⭐⭐'
+  if (rate >= 60) return '⭐⭐'
+  return '⭐'
+}
 
-const trendOption = computed(() => ({
-  grid: { left: 30, right: 20, top: 10, bottom: 20 },
-  xAxis: { type: 'category', data: weeks, axisLabel: { fontSize: 12 } },
-  yAxis: { type: 'value', min: 0, max: 100, axisLabel: { fontSize: 12 } },
-  series: [{
-    data: weeklyRates,
-    type: 'line',
-    lineStyle: { color: '#409EFF', width: 2 },
-    itemStyle: { color: '#409EFF' },
-    areaStyle: { color: 'rgba(64,158,255,0.08)' }
-  }]
-}))
+const trendOption = computed(() => {
+  const trend = analysis.value?.trend || []
+  return {
+    grid: { left: 30, right: 20, top: 10, bottom: 20 },
+    xAxis: { type: 'category', data: trend.map(t => t.date), axisLabel: { fontSize: 12 } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { fontSize: 12 } },
+    series: [{
+      data: trend.map(t => t.correctRate),
+      type: 'line',
+      lineStyle: { color: '#409EFF', width: 2 },
+      itemStyle: { color: '#409EFF' },
+      areaStyle: { color: 'rgba(64,158,255,0.08)' }
+    }]
+  }
+})
+
+onMounted(fetchData)
 </script>
 
 <template>
-  <div class="analysis-report">
+  <div class="analysis-report" v-loading="loading">
     <div class="report-header">
       <h2>学习报告</h2>
-      <span class="report-period">2026年7月 · 第1周</span>
+      <span class="report-period">{{ new Date().toLocaleDateString() }}</span>
     </div>
 
     <ReportSection title="总体表现">
-      <p>本学期完成 <strong>{{ overview.totalQuestions }}</strong> 道题目，覆盖 <strong>{{ overview.totalKnowledge }}</strong> 个知识点。</p>
+      <p>本学期完成 <strong>{{ analysis?.totalQuestions || 0 }}</strong> 道题目，
+        正确 <strong>{{ analysis?.correctQuestions || 0 }}</strong> 道，
+        错误 <strong>{{ analysis?.wrongQuestions || 0 }}</strong> 道。</p>
       <div class="grade-row">
-        <div class="grade-badge">{{ overview.grade }}</div>
+        <div class="grade-badge">{{ gradeFromRate(analysis?.correctRate) }}</div>
         <div class="grade-meta">
-          <div>正确率：<strong>{{ overview.correctRate }}%</strong></div>
-          <div>答题总数：<strong>{{ overview.totalQuestions }}</strong></div>
-          <div>学习天数：<strong>{{ overview.studyDays }} 天</strong></div>
-          <div>日均答题：<strong>{{ overview.dailyAvg }} 题</strong></div>
+          <div>正确率：<strong>{{ analysis?.correctRate?.toFixed(1) || '0' }}%</strong></div>
+          <div>答题总数：<strong>{{ analysis?.totalQuestions || 0 }}</strong></div>
+          <div>综合得分：<strong>{{ analysis?.overallScore?.toFixed(0) || '0' }}</strong></div>
         </div>
       </div>
     </ReportSection>
 
     <ReportSection title="知识点掌握情况">
       <div class="knowledge-list">
-        <div v-for="k in knowledgeList" :key="k.name" class="knowledge-row">
-          <span class="k-stars">{{ levelStars(k.level) }}</span>
-          <span class="k-name">{{ k.name }}</span>
-          <span class="k-label" :class="{ weak: k.level <= 2 }">{{ k.label }}</span>
+        <div v-for="k in (analysis?.knowledgeMastery || [])" :key="k.knowledgeName" class="knowledge-row">
+          <span class="k-stars">{{ levelStars(k.masteryRate) }}</span>
+          <span class="k-name">{{ k.knowledgeName }}</span>
+          <span class="k-label" :class="{ weak: (k.masteryRate || 0) < 60 }">{{ levelText(k.level) }} ({{ k.masteryRate?.toFixed(0) || 0 }}%)</span>
         </div>
       </div>
-      <div class="k-tip">
-        建议重点复习：<strong>动态规划、递归算法</strong>
+      <div v-if="analysis?.weakPoints?.length" class="k-tip">
+        建议重点复习：<strong>{{ analysis?.weakPoints?.join('、') }}</strong>
+      </div>
+      <div v-if="analysis?.suggestion" class="k-tip" style="background: #f0f5ff; color: #409EFF; margin-top: 8px;">
+        {{ analysis.suggestion }}
       </div>
     </ReportSection>
 
-    <ReportSection title="近期趋势">
-      <div class="trend-text">
-        近4周正确率变化：
-        <span v-for="(r, i) in weeklyRates" :key="i" class="week-chip">
-          第{{ i + 1 }}周: <strong>{{ r }}%</strong>{{ i < weeklyRates.length - 1 ? ' →' : '' }}
-        </span>
-      </div>
-      <VChart :option="trendOption" style="height: 160px; margin-top: 12px;" autoresize />
-      <p class="trend-conclusion">趋势：稳步上升</p>
+    <ReportSection title="近期趋势" v-if="analysis?.trend?.length">
+      <VChart :option="trendOption" style="height: 200px;" autoresize />
     </ReportSection>
 
-    <ReportSection title="用时分析">
-      <p>总学习时长：<strong>{{ overview.totalHours }} 小时</strong></p>
-      <p>平均每题耗时：<strong>{{ overview.avgPerQuestion }} 分钟</strong></p>
-      <p>最常学习时段：<strong>{{ overview.peakTime }}</strong></p>
+    <ReportSection title="强项知识点" v-if="analysis?.strongPoints?.length">
+      <p>
+        <el-tag v-for="pt in analysis.strongPoints" :key="pt" type="success" size="small" style="margin-right: 8px;">{{ pt }}</el-tag>
+      </p>
     </ReportSection>
   </div>
 </template>

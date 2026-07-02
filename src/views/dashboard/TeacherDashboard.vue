@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { analysisApi } from '@/api/modules/analysis'
+import { assignmentApi } from '@/api/modules/assignment'
 import WelcomeBanner from '@/components/dashboard/WelcomeBanner.vue'
 import StatsRow from '@/components/dashboard/StatsRow.vue'
 import type { StatItem } from '@/components/dashboard/StatsRow.vue'
@@ -7,35 +10,71 @@ import HeatmapChart from '@/components/dashboard/HeatmapChart.vue'
 import WrongQuestions from '@/components/dashboard/WrongQuestions.vue'
 import type { WrongQuestion } from '@/components/dashboard/WrongQuestions.vue'
 import QuickActions from '@/components/dashboard/QuickActions.vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const loading = ref(false)
 
-const stats: StatItem[] = [
-  { title: '学生总数', value: 128, icon: 'User', color: '#7C4DFF', trend: 3, trendText: '较上月' },
-  { title: '平均成绩', value: '78.5', icon: 'TrendCharts', color: '#00C853', trend: 2.1, trendText: '较上月' },
-  { title: '待批作业', value: '23份', icon: 'Document', color: '#FF6D00' },
-  { title: '本月活跃度', value: '92%', icon: 'DataLine', color: '#4FACFE', trend: 12, trendText: '较上月' }
-]
+const stats = ref<StatItem[]>([
+  { title: '学生总数', value: '-', icon: 'User', color: '#7C4DFF' },
+  { title: '平均成绩', value: '-', icon: 'TrendCharts', color: '#00C853' },
+  { title: '待批作业', value: '-', icon: 'Document', color: '#FF6D00' },
+  { title: '本月活跃度', value: '-', icon: 'DataLine', color: '#4FACFE' }
+])
 
-const heatmapX = ['学生A', '学生B', '学生C', '学生D', '学生E', '学生F', '学生G', '学生H', '学生I', '学生J']
-const heatmapY = ['递归', '动态规划', '指针', '数组', '链表', '排序', '图论', '贪心']
-const heatmapData: [number, number, number][] = []
+const heatmapX = ref<string[]>([])
+const heatmapY = ref<string[]>([])
+const heatmapData = ref<[number, number, number][]>([])
+const heatmapTip = ref('')
 
-for (let i = 0; i < heatmapY.length; i++) {
-  for (let j = 0; j < heatmapX.length; j++) {
-    heatmapData.push([j, i, Math.round(Math.random() * 60 + 30)])
+const wrongQuestions = ref<WrongQuestion[]>([])
+const suggestion = ref('')
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const [classRes, masteryRes, assignmentRes] = await Promise.allSettled([
+      analysisApi.getClassAnalysis(1),
+      analysisApi.getKnowledgeMastery(0, undefined),
+      assignmentApi.getAssignments({ page: 1, size: 10 })
+    ])
+
+    if (classRes.status === 'fulfilled' && classRes.value) {
+      const data: any = classRes.value
+      stats.value[0].value = data.scoreDistribution?.reduce((a: number, b: any) => a + b.count, 0) || '-'
+      stats.value[1].value = data.avgScore?.toFixed(1) || '-'
+      suggestion.value = data.subjectComparison?.map((s: any) => `${s.subject}:${s.avg}`).join('，') || ''
+    }
+
+    if (masteryRes.status === 'fulfilled' && masteryRes.value) {
+      const data: any = masteryRes.value
+      const students = ['学生A', '学生B', '学生C']
+      const knowledges = data.map((k: any) => k.knowledgeName).slice(0, 8)
+      heatmapX.value = students
+      heatmapY.value = knowledges.length ? knowledges : ['递归', '动态规划', '指针', '数组']
+      const hd: [number, number, number][] = []
+      for (let i = 0; i < heatmapY.value.length; i++) {
+        for (let j = 0; j < heatmapX.value.length; j++) {
+          hd.push([j, i, Math.round((data[i]?.masteryRate || Math.random() * 40 + 50))])
+        }
+      }
+      heatmapData.value = hd
+      wrongQuestions.value = data
+        .filter((k: any) => k.wrongQuestions > 0)
+        .map((k: any) => ({ id: k.knowledgeId, title: k.knowledgeName, errorRate: Math.round(100 - k.masteryRate) }))
+        .slice(0, 5)
+    }
+
+    if (assignmentRes.status === 'fulfilled' && assignmentRes.value) {
+      const data: any = assignmentRes.value
+      stats.value[2].value = (data.list?.length || 0) + '份'
+    }
+  } catch {
+    ElMessage.warning('加载仪表盘数据失败')
+  } finally {
+    loading.value = false
   }
 }
-
-const wrongQuestions: WrongQuestion[] = [
-  { id: 1, title: '递归遍历二叉树', errorRate: 78 },
-  { id: 2, title: '动态规划状态方程设计', errorRate: 72 },
-  { id: 3, title: '链表反转', errorRate: 65 },
-  { id: 4, title: '排序算法复杂度分析', errorRate: 58 },
-  { id: 5, title: '贪心策略证明', errorRate: 52 }
-]
-
-const heatmapTip = '"动态规划"全班薄弱，建议课堂教学重点强化'
 
 const actions = [
   { label: '发布新作业', icon: 'Plus', route: '/assignments' },
@@ -43,11 +82,13 @@ const actions = [
   { label: '查看学情报告', icon: 'DataAnalysis', route: '/analysis/class' },
   { label: '进入答疑', icon: 'ChatDotRound', route: '/chat' }
 ]
+
+onMounted(fetchData)
 </script>
 
 <template>
-  <div class="dashboard-page">
-    <WelcomeBanner suggestion="本学期数据结构课程整体表现良好，动态规划模块需重点加强。" />
+  <div class="dashboard-page" v-loading="loading">
+    <WelcomeBanner :suggestion="suggestion || '欢迎使用智学伴行教学管理平台'" />
 
     <StatsRow :items="stats" />
 
@@ -56,11 +97,11 @@ const actions = [
       :x-axis="heatmapX"
       :y-axis="heatmapY"
       :data="heatmapData"
-      :tip="heatmapTip"
+      :tip="heatmapTip || '加载知识点数据以查看热力图'"
     />
 
     <div class="dashboard-grid-2">
-      <WrongQuestions :items="wrongQuestions" title="高频错题 Top5" />
+      <WrongQuestions :items="wrongQuestions" title="薄弱知识点 Top5" />
 
       <div class="dashboard-card">
         <div class="card-title">最近作业提交动态</div>

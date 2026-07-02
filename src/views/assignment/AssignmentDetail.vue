@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi } from '@/api/modules/assignment'
-import type { Assignment, AssignmentSubmission } from '@/types'
+import type { Assignment } from '@/types'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -21,7 +21,6 @@ const loadDetail = async () => {
     const res = await assignmentApi.getAssignmentDetail(assignmentId)
     assignment.value = res
   } catch {
-    // 后端接口失败时使用模拟数据
     assignment.value = mockAssignment
   } finally {
     loading.value = false
@@ -36,8 +35,7 @@ const handleSubmit = async () => {
   submitLoading.value = true
   try {
     await assignmentApi.submitAssignment(assignmentId, {
-      content: submissionContent.value,
-      attachments: fileList.value.map((f: any) => f.url || f.name)
+      answers: submissionContent.value
     })
     ElMessage.success('提交成功')
     router.push('/assignments')
@@ -49,21 +47,31 @@ const handleSubmit = async () => {
   }
 }
 
-// 模拟数据
+const getSubject = (item: Assignment) => item.courseName || item.subject || '未知课程'
+const getDeadline = (item: Assignment) => item.endTime || item.deadline || ''
+const getStatusLabel = (status?: string) => {
+  const map: Record<string, string> = { PUBLISHED: '已发布', DRAFT: '草稿', CLOSED: '已关闭' }
+  return map[status || ''] || status || '未知'
+}
+const getStatusType = (status?: string): 'primary' | 'info' | 'warning' => {
+  const map: Record<string, 'primary' | 'info' | 'warning'> = { PUBLISHED: 'primary', DRAFT: 'info', CLOSED: 'warning' }
+  return map[status || ''] || 'info'
+}
+
 const mockAssignment: Assignment = {
   id: 1,
   title: '第一章 线性表课后作业',
-  description: '完成教材P30-P35所有练习题，包括：\n1. 简述线性表的两种存储结构及其特点\n2. 编写算法实现顺序表的插入和删除操作\n3. 编写算法实现单链表的逆置\n4. 分析各算法的时间复杂度',
-  subject: '数据结构',
-  deadline: '2026-07-05 23:59:00',
-  status: 'pending',
+  description: '完成教材P30-P35所有练习题',
+  courseName: '数据结构',
+  endTime: '2026-07-05 23:59:00',
+  status: 'PUBLISHED',
   totalScore: 100,
   teacherName: '张老师',
-  createdAt: '2026-06-28 10:00:00'
+  createTime: '2026-06-28 10:00:00'
 }
 
-const handleFileChange = (file: any, files: any[]) => {
-  fileList.value = files
+const handleFileChange = (_file: any, files: any) => {
+  fileList.value = Array.isArray(files) ? files : []
 }
 
 const goBack = () => {
@@ -85,17 +93,17 @@ onMounted(() => {
       <el-card class="detail-card" shadow="never">
         <div class="detail-title">
           <h2>{{ assignment.title }}</h2>
-          <el-tag :type="assignment.status === 'pending' ? 'primary' : 'success'" size="large">
-            {{ assignment.status === 'pending' ? '待完成' : '已完成' }}
+          <el-tag :type="getStatusType(assignment.status)" size="large">
+            {{ getStatusLabel(assignment.status) }}
           </el-tag>
         </div>
 
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="科目">{{ assignment.subject }}</el-descriptions-item>
+          <el-descriptions-item label="科目">{{ getSubject(assignment) }}</el-descriptions-item>
           <el-descriptions-item label="总分">{{ assignment.totalScore || 100 }}分</el-descriptions-item>
-          <el-descriptions-item label="截止时间">{{ assignment.deadline }}</el-descriptions-item>
+          <el-descriptions-item label="截止时间">{{ getDeadline(assignment) }}</el-descriptions-item>
           <el-descriptions-item label="布置教师">{{ assignment.teacherName }}</el-descriptions-item>
-          <el-descriptions-item label="发布时间">{{ assignment.createdAt }}</el-descriptions-item>
+          <el-descriptions-item label="发布时间">{{ assignment.createTime || assignment.createdAt }}</el-descriptions-item>
           <el-descriptions-item label="我的得分">
             <span v-if="assignment.score !== undefined" :style="{ color: assignment.score >= 60 ? '#67C23A' : '#F56C6C', fontWeight: 600 }">
               {{ assignment.score }}
@@ -110,7 +118,7 @@ onMounted(() => {
         </div>
 
         <!-- 提交区域 -->
-        <div v-if="assignment.status === 'pending'" class="submit-section">
+        <div v-if="assignment.status === 'PUBLISHED' || assignment.status === 'pending'" class="submit-section">
           <h3>提交作业</h3>
           <el-input
             v-model="submissionContent"
@@ -139,8 +147,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 已提交展示 -->
-        <div v-else-if="assignment.status === 'submitted' || assignment.status === 'graded'" class="submitted-section">
+        <!-- 已关闭展示 -->
+        <div v-else-if="assignment.status === 'CLOSED'" class="submitted-section">
           <h3>已提交内容</h3>
           <div class="content-box">{{ assignment.description }}</div>
         </div>

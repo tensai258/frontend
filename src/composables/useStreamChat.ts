@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import type { ChatMessage } from '@/types'
 import { storage } from '@/utils/storage'
 
 export function useStreamChat() {

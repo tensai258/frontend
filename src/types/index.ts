@@ -3,9 +3,14 @@ export interface User {
   username: string
   nickname: string
   email: string
+  phone?: string
   avatar?: string
   role: 'student' | 'teacher' | 'admin'
+  status?: number
+  classId?: string
   className?: string
+  grade?: string
+  createTime?: string
   createdAt?: string
 }
 
@@ -34,14 +39,22 @@ export interface ChatMessage {
 export interface Assignment {
   id: number
   title: string
-  description: string
-  subject: string
-  deadline: string
-  status: 'pending' | 'submitted' | 'graded' | 'overdue'
-  score?: number
-  totalScore?: number
+  description?: string
+  courseId?: number
+  courseName?: string
+  subject?: string
+  teacherId?: number
   teacherName?: string
+  status?: string
+  startTime?: string
+  endTime?: string
+  deadline?: string
+  totalScore?: number
+  timeLimit?: number
+  allowRetry?: number
+  score?: number
   createdAt?: string
+  createTime?: string
 }
 
 export interface AssignmentSubmission {

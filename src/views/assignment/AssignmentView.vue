@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { assignmentApi } from '@/api/modules/assignment'
 import type { Assignment } from '@/types'
+import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 
 const router = useRouter()
@@ -14,17 +15,23 @@ const subjects = ref<string[]>([])
 
 const statusOptions = [
   { label: '全部', value: '' },
-  { label: '待完成', value: 'pending' },
-  { label: '已提交', value: 'submitted' },
-  { label: '已批改', value: 'graded' },
-  { label: '已逾期', value: 'overdue' }
+  { label: '已发布', value: 'PUBLISHED' },
+  { label: '草稿', value: 'DRAFT' },
+  { label: '已关闭', value: 'CLOSED' }
 ]
 
 const statusMap: Record<string, { type: 'primary' | 'success' | 'warning' | 'danger' | 'info'; label: string }> = {
-  pending: { type: 'primary', label: '待完成' },
-  submitted: { type: 'success', label: '已提交' },
-  graded: { type: 'warning', label: '已批改' },
-  overdue: { type: 'danger', label: '已逾期' }
+  PUBLISHED: { type: 'primary', label: '已发布' },
+  DRAFT: { type: 'info', label: '草稿' },
+  CLOSED: { type: 'warning', label: '已关闭' }
+}
+
+const getSubject = (item: Assignment) => item.courseName || item.subject || '未知课程'
+const getDeadline = (item: Assignment) => item.endTime || item.deadline || ''
+const isExpired = (item: Assignment) => {
+  const deadline = getDeadline(item)
+  if (!deadline) return false
+  return new Date(deadline).getTime() < Date.now()
 }
 
 const loadAssignments = async () => {
@@ -34,10 +41,9 @@ const loadAssignments = async () => {
       page: 1,
       size: 20
     })
-    assignments.value = res.records || []
+    assignments.value = res.list || []
   } catch {
-    // 后端接口失败时使用模拟数据
-    assignments.value = mockAssignments
+    ElMessage.error('加载作业失败，请确保后端服务已启动')
   } finally {
     loading.value = false
   }
@@ -51,51 +57,6 @@ const loadSubjects = async () => {
     subjects.value = ['数据结构', '高等数学', '操作系统', '计算机网络']
   }
 }
-
-// 模拟数据
-const mockAssignments: Assignment[] = [
-  {
-    id: 1,
-    title: '第一章 线性表课后作业',
-    description: '完成教材P30-P35所有练习题',
-    subject: '数据结构',
-    deadline: '2026-07-05 23:59:00',
-    status: 'pending',
-    totalScore: 100,
-    teacherName: '张老师'
-  },
-  {
-    id: 2,
-    title: '栈与队列编程作业',
-    description: '用C语言实现顺序栈和链栈',
-    subject: '数据结构',
-    deadline: '2026-07-10 23:59:00',
-    status: 'submitted',
-    totalScore: 100,
-    teacherName: '张老师'
-  },
-  {
-    id: 3,
-    title: '高数第三章测验',
-    description: '微分中值定理与导数的应用',
-    subject: '高等数学',
-    deadline: '2026-06-25 23:59:00',
-    status: 'graded',
-    score: 85,
-    totalScore: 100,
-    teacherName: '李老师'
-  },
-  {
-    id: 4,
-    title: '二叉树遍历练习',
-    description: '实现前序、中序、后序遍历',
-    subject: '数据结构',
-    deadline: '2026-06-20 23:59:00',
-    status: 'overdue',
-    totalScore: 100,
-    teacherName: '张老师'
-  }
-]
 
 const goDetail = (id: number) => {
   router.push(`/assignments/${id}`)
@@ -172,18 +133,18 @@ onMounted(() => {
       >
         <el-card class="assignment-card" shadow="hover" @click="goDetail(item.id)">
           <div class="card-header">
-            <el-tag :type="statusMap[item.status]?.type || 'info'" size="small">
-              {{ statusMap[item.status]?.label || item.status }}
+            <el-tag :type="statusMap[item.status || '']?.type || 'info'" size="small">
+              {{ statusMap[item.status || '']?.label || item.status }}
             </el-tag>
-            <span class="subject-tag">{{ item.subject }}</span>
+            <span class="subject-tag">{{ getSubject(item) }}</span>
           </div>
           <h3 class="assignment-title">{{ item.title }}</h3>
           <p class="assignment-desc">{{ item.description }}</p>
           <div class="assignment-meta">
             <div class="meta-item">
               <el-icon><Timer /></el-icon>
-              <span :style="{ color: getDeadlineColor(item.deadline, item.status) }">
-                {{ getDeadlineText(item.deadline, item.status) }}
+              <span :style="{ color: getDeadlineColor(getDeadline(item), isExpired(item) ? 'overdue' : 'pending') }">
+                {{ getDeadlineText(getDeadline(item), isExpired(item) ? 'overdue' : 'pending') }}
               </span>
             </div>
             <div class="meta-item">

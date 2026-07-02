@@ -23,7 +23,7 @@ export const analysisApi = {
     return request.get<{ date: string; score: number }[]>('/analysis/trend', { params })
   },
 
-  getWrongQuestions(params?: { courseId?: number; limit?: number }) {
-    return request.get<{ question: string; wrongCount: number }[]>('/analysis/wrong-questions', { params })
+  getWrongQuestions(params?: { page?: number; size?: number; category?: string }) {
+    return request.get<{ list: any[]; total: number }>('/question/wrong/list', { params })
   }
 }
