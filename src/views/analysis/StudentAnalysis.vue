@@ -1,252 +1,162 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { analysisApi } from '@/api/modules/analysis'
-import type { AnalysisData } from '@/types'
-import StatCard from '@/components/common/StatCard.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { RadarChart, LineChart, HeatmapChart } from 'echarts/charts'
-import {
-  TitleComponent, TooltipComponent, LegendComponent,
-  GridComponent, PolarComponent, VisualMapComponent
-} from 'echarts/components'
+import { computed } from 'vue'
+import ReportSection from '@/components/student/ReportSection.vue'
 import VChart from 'vue-echarts'
+import { use } from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 
-use([
-  CanvasRenderer, RadarChart, LineChart, HeatmapChart,
-  TitleComponent, TooltipComponent, LegendComponent,
-  GridComponent, PolarComponent, VisualMapComponent
-])
+use([LineChart, GridComponent, CanvasRenderer])
 
-const analysisData = ref<AnalysisData | null>(null)
-const loading = ref(false)
-
-const radarOption = ref({})
-const trendOption = ref({})
-const heatmapOption = ref({})
-
-const loadData = async () => {
-  loading.value = true
-  try {
-    const res = await analysisApi.getStudentAnalysis(1)
-    analysisData.value = res
-    updateCharts(res)
-  } catch {
-    // 后端接口失败时使用模拟数据
-    analysisData.value = mockAnalysisData
-    updateCharts(mockAnalysisData)
-  } finally {
-    loading.value = false
-  }
+interface KnowledgeItem {
+  name: string
+  level: number
+  label: string
+  rate: number
 }
 
-// 模拟数据
-const mockAnalysisData: AnalysisData = {
-  radarData: {
-    indicator: [
-      { name: '算法能力', max: 100 },
-      { name: '编程能力', max: 100 },
-      { name: '理论基础', max: 100 },
-      { name: '问题分析', max: 100 },
-      { name: '实践应用', max: 100 },
-      { name: '创新思维', max: 100 }
-    ],
-    value: [75, 82, 68, 70, 78, 65],
-    average: [70, 72, 75, 68, 73, 70]
-  },
-  trendData: {
-    dates: ['第1周', '第2周', '第3周', '第4周', '第5周', '第6周', '第7周', '第8周'],
-    scores: [65, 72, 68, 78, 75, 82, 80, 85],
-    classAverage: [62, 65, 68, 70, 72, 73, 75, 76]
-  },
-  heatmapData: {
-    subjects: ['数据结构', '高等数学', '操作系统', '计算机网络', '组成原理'],
-    days: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-    data: [
-      [0, 0, 5], [1, 0, 3], [2, 0, 4], [3, 0, 2], [4, 0, 6],
-      [0, 1, 4], [1, 1, 6], [2, 1, 3], [3, 1, 5], [4, 1, 2],
-      [0, 2, 3], [1, 2, 2], [2, 2, 7], [3, 2, 4], [4, 2, 5],
-      [0, 3, 6], [1, 3, 4], [2, 3, 5], [3, 3, 3], [4, 3, 6],
-      [0, 4, 2], [1, 4, 5], [2, 4, 3], [3, 4, 7], [4, 4, 4],
-      [0, 5, 8], [1, 5, 6], [2, 5, 5], [3, 5, 6], [4, 5, 8],
-      [0, 6, 7], [1, 6, 4], [2, 6, 6], [3, 6, 5], [4, 6, 7]
-    ]
-  },
-  overview: {
-    totalScore: 680,
-    rank: 12,
-    classSize: 45,
-    completionRate: 85,
-    avgScore: 75.5
-  }
+const overview = {
+  totalQuestions: 156,
+  totalKnowledge: 12,
+  correctRate: 76,
+  grade: 'B+',
+  studyDays: 42,
+  dailyAvg: 3.7,
+  totalHours: 12.5,
+  avgPerQuestion: 4.8,
+  peakTime: '晚上 20:00 - 22:00'
 }
 
-const updateCharts = (data: AnalysisData) => {
-  // 雷达图
-  radarOption.value = {
-    title: { text: '能力雷达图', left: 'center' },
-    tooltip: {},
-    legend: { data: ['我的能力', '班级平均'], bottom: 0 },
-    radar: {
-      indicator: data.radarData.indicator,
-      radius: '65%'
-    },
-    series: [{
-      type: 'radar',
-      data: [
-        { value: data.radarData.value, name: '我的能力', areaStyle: { color: 'rgba(64, 158, 255, 0.3)' }, lineStyle: { color: '#409EFF' } },
-        { value: data.radarData.average, name: '班级平均', areaStyle: { color: 'rgba(103, 194, 58, 0.2)' }, lineStyle: { color: '#67C23A' } }
-      ]
-    }]
-  }
+const knowledgeList: KnowledgeItem[] = [
+  { name: '数组与链表', level: 5, label: '优秀', rate: 92 },
+  { name: '排序算法', level: 4, label: '良好', rate: 80 },
+  { name: '指针操作', level: 4, label: '良好', rate: 78 },
+  { name: '图论基础', level: 3, label: '一般', rate: 65 },
+  { name: '动态规划', level: 2, label: '薄弱', rate: 38 },
+  { name: '递归算法', level: 1, label: '需加强', rate: 45 }
+]
 
-  // 趋势图
-  trendOption.value = {
-    title: { text: '成绩趋势', left: 'center' },
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['我的成绩', '班级平均'], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-    xAxis: { type: 'category', data: data.trendData.dates },
-    yAxis: { type: 'value', min: 0, max: 100 },
-    series: [
-      {
-        name: '我的成绩',
-        type: 'line',
-        data: data.trendData.scores,
-        smooth: true,
-        areaStyle: { color: 'rgba(64, 158, 255, 0.2)' },
-        lineStyle: { color: '#409EFF' },
-        itemStyle: { color: '#409EFF' }
-      },
-      {
-        name: '班级平均',
-        type: 'line',
-        data: data.trendData.classAverage,
-        smooth: true,
-        lineStyle: { color: '#67C23A', type: 'dashed' },
-        itemStyle: { color: '#67C23A' }
-      }
-    ]
-  }
+const levelStars = (l: number) => '⭐'.repeat(l)
 
-  // 热力图
-  heatmapOption.value = {
-    title: { text: '学习活跃度热力图', left: 'center' },
-    tooltip: { position: 'top' },
-    grid: { left: '3%', right: '8%', bottom: '10%', containLabel: true },
-    xAxis: { type: 'category', data: data.heatmapData.subjects, splitArea: { show: true } },
-    yAxis: { type: 'category', data: data.heatmapData.days, splitArea: { show: true } },
-    visualMap: {
-      min: 0,
-      max: 10,
-      calculable: true,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: '0%',
-      inRange: { color: ['#f0f9ff', '#bae0ff', '#409EFF', '#096dd9'] }
-    },
-    series: [{
-      type: 'heatmap',
-      data: data.heatmapData.data,
-      label: { show: true },
-      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
-    }]
-  }
-}
+const weeks = ['第1周', '第2周', '第3周', '第4周']
+const weeklyRates = [68, 72, 74, 76]
 
-onMounted(() => {
-  loadData()
-})
+const trendOption = computed(() => ({
+  grid: { left: 30, right: 20, top: 10, bottom: 20 },
+  xAxis: { type: 'category', data: weeks, axisLabel: { fontSize: 12 } },
+  yAxis: { type: 'value', min: 0, max: 100, axisLabel: { fontSize: 12 } },
+  series: [{
+    data: weeklyRates,
+    type: 'line',
+    lineStyle: { color: '#409EFF', width: 2 },
+    itemStyle: { color: '#409EFF' },
+    areaStyle: { color: 'rgba(64,158,255,0.08)' }
+  }]
+}))
 </script>
 
 <template>
-  <div class="student-analysis" v-loading="loading">
-    <PageHeader title="个人学情分析" description="全面了解你的学习情况" />
+  <div class="analysis-report">
+    <div class="report-header">
+      <h2>学习报告</h2>
+      <span class="report-period">2026年7月 · 第1周</span>
+    </div>
 
-    <!-- 概览统计 -->
-    <el-row :gutter="16" class="stats-row">
-      <el-col :xs="12" :sm="6">
-        <StatCard
-          title="总分"
-          :value="analysisData?.overview.totalScore || 0"
-          icon="Trophy"
-          color="#E6A23C"
-        />
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <StatCard
-          title="班级排名"
-          :value="`${analysisData?.overview.rank || 0}/${analysisData?.overview.classSize || 0}`"
-          icon="Medal"
-          color="#F56C6C"
-        />
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <StatCard
-          title="作业完成率"
-          :value="`${analysisData?.overview.completionRate || 0}%`"
-          icon="Checked"
-          color="#67C23A"
-        />
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <StatCard
-          title="平均分"
-          :value="analysisData?.overview.avgScore || 0"
-          icon="DataLine"
-          color="#409EFF"
-        />
-      </el-col>
-    </el-row>
+    <ReportSection title="总体表现">
+      <p>本学期完成 <strong>{{ overview.totalQuestions }}</strong> 道题目，覆盖 <strong>{{ overview.totalKnowledge }}</strong> 个知识点。</p>
+      <div class="grade-row">
+        <div class="grade-badge">{{ overview.grade }}</div>
+        <div class="grade-meta">
+          <div>正确率：<strong>{{ overview.correctRate }}%</strong></div>
+          <div>答题总数：<strong>{{ overview.totalQuestions }}</strong></div>
+          <div>学习天数：<strong>{{ overview.studyDays }} 天</strong></div>
+          <div>日均答题：<strong>{{ overview.dailyAvg }} 题</strong></div>
+        </div>
+      </div>
+    </ReportSection>
 
-    <!-- 图表区 -->
-    <el-row :gutter="16" class="charts-row">
-      <el-col :xs="24" :lg="12">
-        <el-card class="chart-card" shadow="hover">
-          <v-chart class="chart" :option="radarOption" autoresize />
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :lg="12">
-        <el-card class="chart-card" shadow="hover">
-          <v-chart class="chart" :option="trendOption" autoresize />
-        </el-card>
-      </el-col>
-    </el-row>
+    <ReportSection title="知识点掌握情况">
+      <div class="knowledge-list">
+        <div v-for="k in knowledgeList" :key="k.name" class="knowledge-row">
+          <span class="k-stars">{{ levelStars(k.level) }}</span>
+          <span class="k-name">{{ k.name }}</span>
+          <span class="k-label" :class="{ weak: k.level <= 2 }">{{ k.label }}</span>
+        </div>
+      </div>
+      <div class="k-tip">
+        建议重点复习：<strong>动态规划、递归算法</strong>
+      </div>
+    </ReportSection>
 
-    <el-row :gutter="16" class="charts-row">
-      <el-col :span="24">
-        <el-card class="chart-card" shadow="hover">
-          <v-chart class="chart heatmap-chart" :option="heatmapOption" autoresize />
-        </el-card>
-      </el-col>
-    </el-row>
+    <ReportSection title="近期趋势">
+      <div class="trend-text">
+        近4周正确率变化：
+        <span v-for="(r, i) in weeklyRates" :key="i" class="week-chip">
+          第{{ i + 1 }}周: <strong>{{ r }}%</strong>{{ i < weeklyRates.length - 1 ? ' →' : '' }}
+        </span>
+      </div>
+      <VChart :option="trendOption" style="height: 160px; margin-top: 12px;" autoresize />
+      <p class="trend-conclusion">趋势：稳步上升</p>
+    </ReportSection>
+
+    <ReportSection title="用时分析">
+      <p>总学习时长：<strong>{{ overview.totalHours }} 小时</strong></p>
+      <p>平均每题耗时：<strong>{{ overview.avgPerQuestion }} 分钟</strong></p>
+      <p>最常学习时段：<strong>{{ overview.peakTime }}</strong></p>
+    </ReportSection>
   </div>
 </template>
 
 <style scoped>
-.student-analysis {
-  padding-bottom: 40px;
+.analysis-report { max-width: 800px; }
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--spacing);
 }
 
-.stats-row {
-  margin-bottom: 20px;
+.report-header h2 { font-size: 22px; font-weight: 700; margin: 0; color: var(--text-primary); }
+
+.report-period { font-size: 13px; color: var(--text-muted); }
+
+.grade-row { display: flex; gap: 24px; align-items: center; margin-top: 12px; }
+
+.grade-badge {
+  width: 80px; height: 80px;
+  background: #f0f5ff; color: #409EFF;
+  font-size: 36px; font-weight: 800; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 
-.charts-row {
-  margin-bottom: 20px;
+.grade-meta { display: flex; flex-direction: column; gap: 4px; }
+
+.knowledge-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid #f5f5f5;
+}
+.knowledge-row:last-child { border-bottom: none; }
+
+.k-stars { font-size: 16px; letter-spacing: 2px; width: 130px; }
+
+.k-name { flex: 1; font-weight: 500; }
+
+.k-label { font-size: 13px; }
+
+.k-label.weak { color: #F56C6C; font-weight: 600; }
+
+.k-tip {
+  margin-top: 12px; padding: 10px 14px;
+  background: #fef0f0; border-radius: 8px;
+  font-size: 13px; color: #F56C6C;
 }
 
-.chart-card {
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
+.trend-text { font-size: 14px; }
 
-.chart {
-  height: 350px;
-}
+.week-chip { margin-right: 8px; }
 
-.heatmap-chart {
-  height: 300px;
-}
+.trend-conclusion { font-size: 14px; color: #67C23A; margin-top: 8px; }
 </style>
