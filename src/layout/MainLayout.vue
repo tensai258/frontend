@@ -11,6 +11,12 @@ const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
 
 const menuItems = computed(() => {
+  if (user.value?.role === 'student') {
+    return [
+      { path: '/student', title: '学习中心', icon: 'HomeFilled' }
+    ]
+  }
+
   const dashboardPath =
     user.value?.role === 'teacher' ? '/dashboard/teacher' :
     user.value?.role === 'admin' ? '/dashboard/admin' :

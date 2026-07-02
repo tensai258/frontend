@@ -18,16 +18,53 @@ const router = createRouter({
       meta: { public: true, title: '注册' }
     },
     {
-      path: '/',
-      component: () => import('@/layout/MainLayout.vue'),
-      redirect: '/dashboard/student',
+      path: '/student',
+      component: () => import('@/views/student/StudentLayout.vue'),
+      redirect: '/student/questions',
       children: [
         {
-          path: 'dashboard/student',
-          name: 'StudentDashboard',
-          component: () => import('@/views/dashboard/StudentDashboard.vue'),
-          meta: { title: '学习Dashboard', icon: 'HomeFilled' }
+          path: 'questions',
+          name: 'QuestionBank',
+          component: () => import('@/views/student/QuestionBank.vue'),
+          meta: { title: '题库中心' }
         },
+        {
+          path: 'assignments',
+          name: 'StudentAssignments',
+          component: () => import('@/views/assignment/AssignmentView.vue'),
+          meta: { title: '作业中心' }
+        },
+        {
+          path: 'wrong-qs',
+          name: 'StudentWrongQuestions',
+          component: () => import('@/views/student/WrongQuestions.vue'),
+          meta: { title: '错题集' }
+        },
+        {
+          path: 'recommend',
+          name: 'StudentRecommend',
+          component: () => import('@/views/student/Recommend.vue'),
+          meta: { title: '个性化推荐' }
+        },
+        {
+          path: 'analysis',
+          name: 'StudentAnalysis',
+          component: () => import('@/views/analysis/StudentAnalysis.vue'),
+          meta: { title: '学情分析' }
+        },
+        {
+          path: 'chat',
+          name: 'StudentChat',
+          component: () => import('@/views/chat/ChatView.vue'),
+          meta: { title: '智能答疑' }
+        }
+      ]
+    },
+    {
+      path: '/',
+      component: () => import('@/layout/MainLayout.vue'),
+      redirect: '/dashboard/teacher',
+      children: [
         {
           path: 'dashboard/teacher',
           name: 'TeacherDashboard',
@@ -103,7 +140,7 @@ router.beforeEach((to, from, next) => {
     const role = userStore.user?.role
     if (role === 'teacher') return next('/dashboard/teacher')
     if (role === 'admin') return next('/dashboard/admin')
-    return next('/dashboard/student')
+    return next('/student')
   }
 
   if (to.meta.title) {
