@@ -145,13 +145,12 @@ onMounted(() => {
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .chat-sidebar {
   width: 260px;
-  background: #f8f9fa;
-  border-right: 1px solid #e4e7ed;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -160,6 +159,7 @@ onMounted(() => {
 .new-chat-btn {
   width: 100%;
   margin-bottom: 16px;
+  border-radius: 8px;
 }
 
 .session-list {
@@ -170,23 +170,17 @@ onMounted(() => {
 .session-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
-  margin-bottom: 4px;
-  position: relative;
+  margin-bottom: 2px;
+  font-size: 14px;
+  color: #374151;
 }
 
-.session-item:hover {
-  background: #e6f2ff;
-}
-
-.session-item.active {
-  background: #cce5ff;
-  color: #409EFF;
-}
+.session-item:hover { background: #e5e7eb; }
+.session-item.active { background: #dbeafe; color: #1d4ed8; }
 
 .session-title {
   flex: 1;
@@ -214,7 +208,7 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  position: relative;
+  background: #fff;
 }
 
 .welcome-screen {
@@ -222,63 +216,68 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #fafafa;
 }
 
 .welcome-content {
   text-align: center;
+  max-width: 480px;
   padding: 40px;
 }
 
 .welcome-content h2 {
   font-size: 24px;
-  color: #303133;
-  margin: 20px 0 12px;
+  color: #1a1a2e;
+  margin: 16px 0 8px;
+  font-weight: 700;
 }
 
 .welcome-content p {
-  color: #909399;
-  margin-bottom: 32px;
+  color: #6b7280;
+  margin-bottom: 28px;
+  font-size: 15px;
 }
 
 .quick-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 300px;
-  margin: 0 auto;
+  gap: 10px;
 }
 
 .quick-btn {
   justify-content: flex-start;
   text-align: left;
-  padding: 12px 16px;
+  padding: 14px 18px;
   height: auto;
-  border-radius: 8px;
-  border: 1px solid #dcdfe6;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.2s;
 }
 
 .quick-btn:hover {
   border-color: #409EFF;
+  background: #eff6ff;
   color: #409EFF;
 }
 
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
 }
 
 .input-area {
   padding: 16px 24px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid #e5e7eb;
   background: #fff;
 }
 
 @media (max-width: 768px) {
-  .chat-sidebar {
-    display: none;
-  }
+  .chat-sidebar { display: none; }
+  .messages-container { padding: 16px; }
 }
 </style>
