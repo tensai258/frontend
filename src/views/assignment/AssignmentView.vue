@@ -215,6 +215,8 @@ onMounted(() => {
 .filter-card {
   margin-bottom: 20px;
   border-radius: 12px;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .filter-bar {
@@ -234,6 +236,7 @@ onMounted(() => {
   font-size: 14px;
   color: #606266;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .assignment-col {
@@ -245,33 +248,34 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s;
   height: 100%;
+  border: 1px solid #f0f0f0;
 }
 
 .assignment-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .subject-tag {
-  font-size: 13px;
+  font-size: 12px;
   color: #909399;
   background: #f5f7fa;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
 }
 
 .assignment-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
-  margin: 0 0 8px;
+  color: #1a1a2e;
+  margin: 0 0 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -279,7 +283,7 @@ onMounted(() => {
 
 .assignment-desc {
   font-size: 13px;
-  color: #606266;
+  color: #6b7280;
   line-height: 1.5;
   margin: 0 0 16px;
   display: -webkit-box;
@@ -291,7 +295,7 @@ onMounted(() => {
 .assignment-meta {
   display: flex;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .meta-item {
@@ -315,6 +319,7 @@ onMounted(() => {
 .score-text {
   font-size: 13px;
   color: #606266;
+  font-weight: 600;
   white-space: nowrap;
 }
 </style>
