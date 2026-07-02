@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
-const router = useRouter()
+
 const { user, logout, isAdmin } = useAuth()
 
+const hideSidebar = computed(() => user.value?.role === 'student' || user.value?.role === 'teacher')
 const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
 
 const menuItems = computed(() => {
-  if (user.value?.role === 'student') {
-    return [
-      { path: '/student', title: '学习中心', icon: 'HomeFilled' }
-    ]
-  }
-
   const dashboardPath =
     user.value?.role === 'teacher' ? '/dashboard/teacher' :
     user.value?.role === 'admin' ? '/dashboard/admin' :
@@ -53,7 +48,7 @@ watch(() => user.value?.role, setRoleTheme, { immediate: true })
 <template>
   <el-container class="main-layout">
     <!-- 侧边栏 -->
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="sidebar">
+    <el-aside v-if="!hideSidebar" :width="isCollapse ? '64px' : '220px'" class="sidebar">
       <div class="logo">
         <el-icon :size="28" color="#fff"><School /></el-icon>
         <span v-show="!isCollapse" class="logo-text">智学伴行</span>
@@ -80,7 +75,7 @@ watch(() => user.value?.role, setRoleTheme, { immediate: true })
       <!-- 顶部Header -->
       <el-header class="header">
         <div class="header-left">
-          <el-icon class="collapse-btn" @click="toggleCollapse">
+          <el-icon v-if="!hideSidebar" class="collapse-btn" @click="toggleCollapse">
             <Fold v-if="!isCollapse" />
             <Expand v-else />
           </el-icon>

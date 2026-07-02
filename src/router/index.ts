@@ -48,7 +48,7 @@ const router = createRouter({
         },
         {
           path: 'analysis',
-          name: 'StudentAnalysis',
+          name: 'StudentAnalysisView',
           component: () => import('@/views/analysis/StudentAnalysis.vue'),
           meta: { title: '学情分析' }
         },
@@ -61,9 +61,39 @@ const router = createRouter({
       ]
     },
     {
+      path: '/teacher',
+      component: () => import('@/views/teacher/TeacherLayout.vue'),
+      redirect: '/teacher/overview',
+      children: [
+        {
+          path: 'overview',
+          name: 'TeacherOverview',
+          component: () => import('@/views/dashboard/TeacherDashboard.vue'),
+          meta: { title: '班级总览' }
+        },
+        {
+          path: 'assignments',
+          name: 'TeacherAssignments',
+          component: () => import('@/views/assignment/AssignmentView.vue'),
+          meta: { title: '作业管理' }
+        },
+        {
+          path: 'analysis',
+          name: 'TeacherAnalysis',
+          component: () => import('@/views/analysis/ClassAnalysis.vue'),
+          meta: { title: '学情分析' }
+        },
+        {
+          path: 'chat',
+          name: 'TeacherChat',
+          component: () => import('@/views/chat/ChatView.vue'),
+          meta: { title: '智能答疑' }
+        }
+      ]
+    },
+    {
       path: '/',
       component: () => import('@/layout/MainLayout.vue'),
-      redirect: '/dashboard/teacher',
       children: [
         {
           path: 'dashboard/teacher',
@@ -138,7 +168,7 @@ router.beforeEach((to, from, next) => {
   // Role-based dashboard redirect
   if (to.path === '/') {
     const role = userStore.user?.role
-    if (role === 'teacher') return next('/dashboard/teacher')
+    if (role === 'teacher') return next('/teacher')
     if (role === 'admin') return next('/dashboard/admin')
     return next('/student')
   }
