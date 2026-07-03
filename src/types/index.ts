@@ -55,6 +55,25 @@ export interface Assignment {
   score?: number
   createdAt?: string
   createTime?: string
+  /** 作业中的题目列表（详情接口返回） */
+  questions?: QuestionBrief[]
+  /** 提交人数（教师端） */
+  submissionCount?: number
+}
+
+/** 作业中的题目简要信息 */
+export interface QuestionBrief {
+  id: number
+  content: string
+  options?: string
+  answer?: string
+  analysis?: string
+  type?: string
+  difficulty?: number
+  score?: number
+  tags?: string
+  knowledgeId?: number
+  category?: string
 }
 
 export interface AssignmentSubmission {

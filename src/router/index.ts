@@ -74,7 +74,7 @@ const router = createRouter({
         {
           path: 'assignments',
           name: 'TeacherAssignments',
-          component: () => import('@/views/assignment/AssignmentView.vue'),
+          component: () => import('@/views/teacher/TeacherAssignmentManage.vue'),
           meta: { title: '作业管理' }
         },
         {

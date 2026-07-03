@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { questionApi } from '@/api/modules/question'
 import type { QuestionItem } from '@/api/modules/question'
 import { ElMessage } from 'element-plus'
 
+const route = useRoute()
 const categories = ref<string[]>([])
 const activeTag = ref('全部')
 const questions = ref<QuestionItem[]>([])
@@ -31,6 +33,12 @@ const fetchData = async () => {
     ])
     questions.value = listRes.list || []
     categories.value = catRes || []
+
+    // 如果路由传入了分类参数，自动选中对应的标签
+    const categoryParam = route.query.category as string
+    if (categoryParam && categories.value.includes(categoryParam)) {
+      activeTag.value = categoryParam
+    }
   } catch {
     ElMessage.error('加载题目失败，请确保后端服务已启动')
   } finally {

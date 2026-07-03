@@ -4,14 +4,26 @@ import { useRouter } from 'vue-router'
 import { assignmentApi } from '@/api/modules/assignment'
 import type { Assignment } from '@/types'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/common/PageHeader.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 const assignments = ref<Assignment[]>([])
 const loading = ref(false)
 const filterStatus = ref('')
 const filterSubject = ref('')
 const subjects = ref<string[]>([])
+
+// Load submitted assignments from localStorage
+const getSubmittedStatus = (id: number): boolean => {
+  try {
+    const item = localStorage.getItem(`submitted_${id}`)
+    return item !== null
+  } catch {
+    return false
+  }
+}
 
 const statusOptions = [
   { label: '全部', value: '' },
@@ -137,6 +149,13 @@ onMounted(() => {
               {{ statusMap[item.status || '']?.label || item.status }}
             </el-tag>
             <span class="subject-tag">{{ getSubject(item) }}</span>
+            <el-tag
+              v-if="userStore.isStudent && getSubmittedStatus(item.id)"
+              type="success"
+              size="small"
+              effect="plain"
+              style="margin-left: auto;"
+            >已提交</el-tag>
           </div>
           <h3 class="assignment-title">{{ item.title }}</h3>
           <p class="assignment-desc">{{ item.description }}</p>

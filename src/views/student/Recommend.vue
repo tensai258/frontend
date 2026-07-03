@@ -166,7 +166,7 @@ onMounted(fetchData)
             </div>
           </div>
           <div class="rec-actions">
-            <el-button type="primary" size="small" round @click="router.push('/student/questions')">
+            <el-button type="primary" size="small" round @click="router.push('/student/questions?category=' + encodeURIComponent(cat.category))">
               去练习
             </el-button>
             <el-button size="small" round @click="goToWrongQuestions(cat.category)">
