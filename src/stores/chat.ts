@@ -60,15 +60,29 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   const addMessage = (message: ChatMessage) => {
-    messages.value.push(message)
+    messages.value = [...messages.value, message]
   }
 
-  const updateLastMessage = (content: string, isStreaming = false) => {
-    const lastMsg = messages.value[messages.value.length - 1]
-    if (lastMsg && lastMsg.role === 'assistant') {
-      lastMsg.content = content
-      lastMsg.isStreaming = isStreaming
+  const setAssistantReply = (content: string) => {
+    const arr = [...messages.value]
+    // Find last assistant message and update it, or add new one
+    let found = false
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].role === 'assistant') {
+        arr[i] = { ...arr[i], content, isStreaming: false }
+        found = true
+        break
+      }
     }
+    if (!found) {
+      arr.push({
+        role: 'assistant' as const,
+        content,
+        timestamp: new Date().toISOString(),
+        isStreaming: false
+      })
+    }
+    messages.value = arr
   }
 
   const setStreaming = (value: boolean) => {
@@ -104,7 +118,7 @@ export const useChatStore = defineStore('chat', () => {
     loadSessions,
     loadHistory,
     addMessage,
-    updateLastMessage,
+    setAssistantReply,
     setStreaming,
     createNewSession,
     deleteSession,

@@ -82,14 +82,22 @@ onMounted(fetchData)
       <div v-for="wq in filteredQuestions" :key="wq.id" class="wq-card" :style="{ borderLeftColor: wq.mastered === 1 ? '#67C23A' : '#F56C6C' }">
         <div class="wq-header">
           <span class="wq-status-dot" :style="{ background: wq.mastered === 1 ? '#67C23A' : '#F56C6C' }"></span>
-          <span class="wq-title">{{ wq.content?.slice(0, 50) || '题目' }}{{ (wq.content?.length || 0) > 50 ? '...' : '' }}</span>
+          <span class="wq-title">{{ wq.content?.slice(0, 50) || wq.tags || '未知题目' }}{{ (wq.content?.length || 0) > 50 ? '...' : '' }}</span>
           <el-tag v-if="wq.category" size="small">{{ wq.category }}</el-tag>
         </div>
         <div class="wq-meta">
           <span>做错 {{ wq.wrongCount }} 次</span>
           <span v-if="wq.difficulty">难度 {{ '⭐'.repeat(diffStars(wq.difficulty)) }}</span>
-          <span>你的答案: {{ wq.userAnswer }}</span>
-          <span v-if="wq.answer">正确答案: {{ wq.answer }}</span>
+        </div>
+        <div class="wq-answers" v-if="wq.userAnswer || wq.answer">
+          <div class="wq-answer-item wrong">
+            <span class="answer-label">你的答案:</span>
+            <span class="answer-value">{{ wq.userAnswer || '未记录' }}</span>
+          </div>
+          <div class="wq-answer-item correct" v-if="wq.answer">
+            <span class="answer-label">正确答案:</span>
+            <span class="answer-value">{{ wq.answer }}</span>
+          </div>
         </div>
         <div class="wq-actions">
           <el-button size="small" type="primary" plain round @click="handleMarkMastered(wq.id)" v-if="wq.mastered === 0">
@@ -189,5 +197,45 @@ onMounted(fetchData)
 .wq-actions {
   display: flex;
   gap: 8px;
+}
+
+.wq-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wq-answer-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.wq-answer-item.wrong {
+  background: #fef0f0;
+  border: 1px solid #fde2e2;
+}
+
+.wq-answer-item.correct {
+  background: #f0f9eb;
+  border: 1px solid #e1f3d8;
+}
+
+.answer-label {
+  color: var(--text-muted);
+}
+
+.wq-answer-item.wrong .answer-value {
+  color: #F56C6C;
+  font-weight: 500;
+}
+
+.wq-answer-item.correct .answer-value {
+  color: #67C23A;
+  font-weight: 500;
 }
 </style>

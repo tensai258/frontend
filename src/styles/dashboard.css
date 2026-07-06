@@ -36,8 +36,8 @@
   --dashboard-gradient: linear-gradient(135deg, #4FACFE 0%, #00E5FF 100%);
 
   --card-radius: 12px;
-  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  --card-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 6px 24px rgba(0, 0, 0, 0.12);
   --spacing: 24px;
   --text-primary: #1a1a2e;
   --text-secondary: #606266;

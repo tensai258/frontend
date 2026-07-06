@@ -10,6 +10,7 @@ const categories = ref<string[]>([])
 const activeTag = ref('全部')
 const questions = ref<QuestionItem[]>([])
 const loading = ref(false)
+const searchText = ref('')
 
 const answerDialogVisible = ref(false)
 const currentQuestion = ref<QuestionItem | null>(null)
@@ -20,8 +21,15 @@ const answerResult = ref<{ correct: boolean; message: string; correctAnswer?: st
 const tags = computed(() => ['全部', ...categories.value])
 
 const filteredQuestions = computed(() => {
-  if (activeTag.value === '全部') return questions.value
-  return questions.value.filter(q => q.tags?.includes(activeTag.value) || q.type === activeTag.value)
+  let result = questions.value
+  if (activeTag.value !== '全部') {
+    result = result.filter(q => q.tags?.includes(activeTag.value) || q.type === activeTag.value)
+  }
+  if (searchText.value.trim()) {
+    const keyword = searchText.value.trim().toLowerCase()
+    result = result.filter(q => q.content?.toLowerCase().includes(keyword))
+  }
+  return result
 })
 
 const fetchData = async () => {
@@ -133,7 +141,7 @@ onMounted(fetchData)
   <div class="dashboard-page">
     <div class="section-header">
       <h2>题库中心</h2>
-      <el-input placeholder="搜索题目..." prefix-icon="Search" style="width: 280px;" clearable />
+      <el-input v-model="searchText" placeholder="搜索题目..." prefix-icon="Search" style="width: 280px;" clearable />
     </div>
 
     <div class="tag-bar">
@@ -237,31 +245,58 @@ onMounted(fetchData)
 
 .tag-bar {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 4px 0 12px;
   margin-bottom: var(--spacing);
+  scrollbar-width: thin;
+  scrollbar-color: #dcdfe6 transparent;
+}
+
+.tag-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tag-bar::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 2px;
+}
+
+.tag-bar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .tag-chip {
-  padding: 6px 16px;
-  background: #fff;
-  border-radius: 20px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
   cursor: pointer;
-  border: 1px solid #e4e7ed;
-  transition: all 0.2s;
-}
-
-.tag-chip.active {
-  background: var(--dashboard-primary);
-  color: #fff;
-  border-color: var(--dashboard-primary);
+  border: 1.5px solid #e8eaec;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  letter-spacing: 0.3px;
 }
 
 .tag-chip:hover:not(.active) {
   border-color: var(--dashboard-primary);
   color: var(--dashboard-primary);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e8f4ff 100%);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+  transform: translateY(-2px);
+}
+
+.tag-chip.active {
+  background: var(--dashboard-gradient);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.35);
+  transform: translateY(-2px);
+  font-weight: 600;
 }
 
 .qset-grid {

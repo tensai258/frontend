@@ -41,6 +41,12 @@ const router = createRouter({
           meta: { title: '错题集' }
         },
         {
+          path: 'knowledge-graph',
+          name: 'StudentKnowledgeGraph',
+          component: () => import('@/views/student/KnowledgeGraph.vue'),
+          meta: { title: '知识图谱' }
+        },
+        {
           path: 'recommend',
           name: 'StudentRecommend',
           component: () => import('@/views/student/Recommend.vue'),
@@ -51,6 +57,12 @@ const router = createRouter({
           name: 'StudentAnalysisView',
           component: () => import('@/views/analysis/StudentAnalysis.vue'),
           meta: { title: '学情分析' }
+        },
+        {
+          path: 'review',
+          name: 'StudentReview',
+          component: () => import('@/views/student/ReviewView.vue'),
+          meta: { title: '复习回顾' }
         },
         {
           path: 'chat',
@@ -187,7 +199,10 @@ router.beforeEach((to, from, next) => {
   }
 
   if (!userStore.isLoggedIn) {
-    ElMessage.warning('请先登录')
+    // 只在非登录页且非公开页时提示一次
+    if (from.path !== '/login') {
+      ElMessage.warning('请先登录')
+    }
     next('/login')
     return
   }

@@ -55,12 +55,21 @@ const fetchData = async () => {
 }
 
 const gradeFromRate = (rate?: number) => {
-  if (!rate) return 'N/A'
+  if (rate === null || rate === undefined) return 'N/A'
   if (rate >= 90) return 'A'
   if (rate >= 80) return 'B+'
   if (rate >= 70) return 'B'
   if (rate >= 60) return 'C'
   return 'D'
+}
+
+const gradeColor = (rate?: number) => {
+  if (rate === null || rate === undefined) return '#909399'
+  if (rate >= 90) return '#67C23A'
+  if (rate >= 80) return '#409EFF'
+  if (rate >= 70) return '#E6A23C'
+  if (rate >= 60) return '#F56C6C'
+  return '#F56C6C'
 }
 
 const levelText = (level?: string) => {
@@ -69,7 +78,7 @@ const levelText = (level?: string) => {
 }
 
 const levelStars = (rate?: number) => {
-  if (!rate) return '⭐'
+  if (rate === null || rate === undefined) return '⭐'
   if (rate >= 90) return '⭐⭐⭐⭐⭐'
   if (rate >= 80) return '⭐⭐⭐⭐'
   if (rate >= 70) return '⭐⭐⭐'
@@ -108,7 +117,7 @@ onMounted(fetchData)
         正确 <strong>{{ analysis?.correctQuestions || 0 }}</strong> 道，
         错误 <strong>{{ analysis?.wrongQuestions || 0 }}</strong> 道。</p>
       <div class="grade-row">
-        <div class="grade-badge">{{ gradeFromRate(analysis?.correctRate) }}</div>
+        <div class="grade-badge" :style="{ background: gradeColor(analysis?.correctRate) + '15', color: gradeColor(analysis?.correctRate) }">{{ gradeFromRate(analysis?.correctRate) }}</div>
         <div class="grade-meta">
           <div>正确率：<strong>{{ analysis?.correctRate?.toFixed(1) || '0' }}%</strong></div>
           <div>答题总数：<strong>{{ analysis?.totalQuestions || 0 }}</strong></div>
@@ -146,7 +155,10 @@ onMounted(fetchData)
 </template>
 
 <style scoped>
-.analysis-report { max-width: 800px; }
+.analysis-report { 
+  max-width: 1200px;
+  padding-bottom: 40px;
+}
 
 .report-header {
   display: flex;

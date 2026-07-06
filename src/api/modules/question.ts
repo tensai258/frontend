@@ -32,6 +32,48 @@ export interface WrongQuestionItem {
   createTime?: string
 }
 
+export interface KnowledgeNode {
+  id: number
+  name: string
+  category: string
+  level: number
+  masteryRate?: number
+  masteryLevel: string
+  isWeak: boolean
+  importance?: number
+}
+
+export interface KnowledgeEdge {
+  sourceId: number
+  targetId: number
+  relationType: string
+  description?: string
+  weight?: number
+}
+
+export interface KnowledgeGraphData {
+  nodes: KnowledgeNode[]
+  edges: KnowledgeEdge[]
+}
+
+export interface KnowledgeDiagnosis {
+  knowledgeId: number
+  knowledgeName: string
+  category: string
+  masteryRate: number
+  level: string
+  totalQuestions: number
+  wrongQuestions: number
+  correctQuestions: number
+  wrongFrequency: number
+  rootCauseIds: number[]
+  rootCauseNames: string[]
+  rootCauseDescription: string
+  learningAdvice: string
+  practiceQuestionIds: number[]
+  recommendedCount: number
+}
+
 export interface RecommendData {
   weakCategories?: Array<{
     category: string
@@ -39,6 +81,19 @@ export interface RecommendData {
     masteredCount: number
     totalCount: number
     weaknessLevel: string
+    practiceQuestions?: any[]
+  }>
+  knowledgeWeaknesses?: Array<{
+    knowledgeId: number
+    knowledgeName: string
+    category: string
+    totalQuestions: number
+    wrongCount: number
+    masteryRate: number
+    weaknessLevel: string
+    rootCauseIds?: number[]
+    rootCauseNames?: string[]
+    practiceQuestions?: any[]
   }>
   recommendedQuestions?: Array<{
     id: number
@@ -54,6 +109,7 @@ export interface RecommendData {
     score: number
   }>
   suggestion?: string
+  diagnosisSummary?: string
 }
 
 export const questionApi = {
@@ -87,5 +143,39 @@ export const questionApi = {
 
   getRecommend() {
     return request.get<RecommendData>('/question/recommend')
+  },
+
+  getKnowledgeGraph(courseId: number) {
+    return request.get<KnowledgeGraphData>(`/knowledge-graph/graph/${courseId}`)
+  },
+
+  diagnoseWeakPoints(courseId?: number) {
+    return request.get<KnowledgeDiagnosis[]>('/knowledge-graph/diagnose', {
+      params: { courseId: courseId || 1 }
+    })
+  },
+
+  traceRootCause(knowledgeId: number) {
+    return request.get<number[]>(`/knowledge-graph/trace/${knowledgeId}`)
+  },
+
+  getLearningPath(knowledgeId: number) {
+    return request.get<number[]>(`/knowledge-graph/learning-path/${knowledgeId}`)
+  },
+
+  aiGenerate(data: { knowledgeIds?: number[]; count?: number; courseId?: number }) {
+    return request.post<AiQuestionData[]>('/question/ai-generate', data)
   }
+}
+
+export interface AiQuestionData {
+  id: number
+  content: string
+  options: string[]
+  answer: string
+  analysis: string
+  difficulty: number
+  knowledgeName: string
+  sessionId: string
+  isAiGenerated: boolean
 }

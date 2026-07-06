@@ -24,7 +24,7 @@ export function useStreamChat() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, useRag: true })
       })
 
       if (!response.ok) {
@@ -66,12 +66,10 @@ export function useStreamChat() {
                 throw new Error(parsed.error)
               }
             } catch {
-              // 非JSON数据，直接追加
-              if (data.trim()) {
-                fullContent += data
-                streamContent.value = fullContent
-                onChunk(data)
-              }
+              // 非JSON数据，直接追加（保留换行符）
+              fullContent += data + '\n'
+              streamContent.value = fullContent
+              onChunk(data + '\n')
             }
           }
         }

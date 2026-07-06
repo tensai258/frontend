@@ -11,7 +11,9 @@ const tabs = [
   { path: '/student/questions', label: '题库中心', icon: 'Collection' },
   { path: '/student/assignments', label: '作业中心', icon: 'Document' },
   { path: '/student/wrong-qs', label: '错题集', icon: 'WarningFilled' },
-  { path: '/student/recommend', label: '个性化推荐', icon: 'MagicStick' },
+  { path: '/student/knowledge-graph', label: '知识图谱', icon: 'Connection' },
+  { path: '/student/recommend', label: '智能推荐', icon: 'MagicStick' },
+  { path: '/student/review', label: '复习回顾', icon: 'Timer' },
   { path: '/student/analysis', label: '学情分析', icon: 'DataAnalysis' },
   { path: '/student/chat', label: '智能答疑', icon: 'ChatDotRound' }
 ]

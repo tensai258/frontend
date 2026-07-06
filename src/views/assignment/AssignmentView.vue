@@ -43,16 +43,24 @@ const getDeadline = (item: Assignment) => item.endTime || item.deadline || ''
 const isExpired = (item: Assignment) => {
   const deadline = getDeadline(item)
   if (!deadline) return false
-  return new Date(deadline).getTime() < Date.now()
+  const time = new Date(deadline).getTime()
+  return !isNaN(time) && time < Date.now()
 }
 
 const loadAssignments = async () => {
   loading.value = true
   try {
-    const res = await assignmentApi.getAssignments({
+    const params: any = {
       page: 1,
       size: 20
-    })
+    }
+    if (filterStatus.value) {
+      params.status = filterStatus.value
+    }
+    if (filterSubject.value) {
+      params.courseId = filterSubject.value
+    }
+    const res = await assignmentApi.getAssignments(params)
     assignments.value = res.list || []
   } catch {
     ElMessage.error('加载作业失败，请确保后端服务已启动')
@@ -76,7 +84,10 @@ const goDetail = (id: number) => {
 
 const getDeadlineColor = (deadline: string, status: string) => {
   if (status === 'overdue') return '#F56C6C'
-  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  if (!deadline) return '#909399'
+  const time = new Date(deadline).getTime()
+  if (isNaN(time)) return '#909399'
+  const days = Math.ceil((time - Date.now()) / (1000 * 60 * 60 * 24))
   if (days <= 1) return '#F56C6C'
   if (days <= 3) return '#E6A23C'
   return '#67C23A'
@@ -84,7 +95,10 @@ const getDeadlineColor = (deadline: string, status: string) => {
 
 const getDeadlineText = (deadline: string, status: string) => {
   if (status === 'overdue') return '已逾期'
-  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  if (!deadline) return '无截止时间'
+  const time = new Date(deadline).getTime()
+  if (isNaN(time)) return '无截止时间'
+  const days = Math.ceil((time - Date.now()) / (1000 * 60 * 60 * 24))
   if (days < 0) return '已逾期'
   if (days === 0) return '今天截止'
   return `还剩 ${days} 天`
@@ -169,6 +183,10 @@ onMounted(() => {
             <div class="meta-item">
               <el-icon><User /></el-icon>
               <span>{{ item.teacherName }}</span>
+            </div>
+            <div class="meta-item" v-if="item.questions?.length">
+              <el-icon><Document /></el-icon>
+              <span>{{ item.questions.length }} 道题</span>
             </div>
           </div>
           <div v-if="item.score !== undefined" class="score-bar">

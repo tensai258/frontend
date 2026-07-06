@@ -212,9 +212,18 @@ watch(() => user.value?.role, setRoleTheme, { immediate: true })
   color: #606266;
 }
 
+:deep(.el-container) {
+  height: 100%;
+}
+
+:deep(.el-main) {
+  background-color: #f5f7fa;
+  padding: 20px;
+  overflow: visible;
+}
+
 .main-content {
   background-color: #f5f7fa;
   padding: 20px;
-  overflow-y: auto;
 }
 </style>

@@ -5,6 +5,7 @@ import { questionApi } from '@/api/modules/question'
 import type { RecommendData } from '@/api/modules/question'
 import { ElMessage } from 'element-plus'
 import EmptyWrongState from '@/components/student/EmptyWrongState.vue'
+import AiPracticeDialog from '@/components/student/AiPracticeDialog.vue'
 
 const router = useRouter()
 const recommendData = ref<RecommendData | null>(null)
@@ -51,7 +52,7 @@ const severityColor = (level: string) => {
   return '#409EFF'
 }
 
-const goToWrongQuestions = (category: string) => {
+const goToWrongQuestions = (_category: string) => {
   router.push('/student/wrong-qs')
 }
 
@@ -76,6 +77,20 @@ const currentQuestion = ref<RecQuestion | null>(null)
 const selectedAnswer = ref('')
 const submitting = ref(false)
 const answerResult = ref<{ correct: boolean; message: string; correctAnswer?: string; analysis?: string } | null>(null)
+
+const aiDialogVisible = ref(false)
+const aiKnowledgeIds = ref<number[]>([])
+const aiKnowledgeName = ref('')
+
+const openAiPractice = (knowledgeId: number, name: string) => {
+  aiKnowledgeIds.value = [knowledgeId]
+  aiKnowledgeName.value = name
+  aiDialogVisible.value = true
+}
+
+const onAiComplete = (r: { total: number; correct: number }) => {
+  ElMessage.success(`AI练习完成！正确 ${r.correct}/${r.total}`)
+}
 
 const extractAnswerLetter = (text: string): string => {
   if (!text) return ''
@@ -142,9 +157,59 @@ onMounted(fetchData)
         根据你的 <strong>{{ totalWrongAll() }}</strong> 道错题分析，以下知识点需要重点巩固：
       </p>
 
+      <div v-if="recommendData?.diagnosisSummary" class="rec-summary">
+        <el-icon><DataAnalysis /></el-icon>
+        {{ recommendData.diagnosisSummary }}
+      </div>
+
       <div v-if="recommendData?.suggestion" class="rec-suggestion">
         <el-icon><InfoFilled /></el-icon>
         {{ recommendData.suggestion }}
+      </div>
+
+      <!-- 知识点级薄弱诊断（新增） -->
+      <div v-if="(recommendData?.knowledgeWeaknesses?.length || 0) > 0" class="kw-section">
+        <h3 class="section-title">
+          <el-icon><Monitor /></el-icon>
+          知识点级薄弱诊断
+        </h3>
+        <div class="kw-grid">
+          <div v-for="kw in (recommendData?.knowledgeWeaknesses || [])" :key="kw.knowledgeId" class="kw-card">
+            <div class="kw-header">
+              <span class="kw-name">{{ kw.knowledgeName }}</span>
+              <el-tag v-if="kw.category" size="small" type="info">{{ kw.category }}</el-tag>
+            </div>
+            <div class="kw-mastery-row">
+              <div class="kw-mastery-bar">
+                <div class="kw-mastery-fill" :style="{ width: Math.min(kw.masteryRate || 0, 100) + '%', background: (kw.masteryRate || 0) < 30 ? '#F56C6C' : (kw.masteryRate || 0) < 60 ? '#E6A23C' : '#67C23A' }"></div>
+              </div>
+              <span class="kw-mastery-text" :style="{ color: (kw.masteryRate || 0) < 30 ? '#F56C6C' : (kw.masteryRate || 0) < 60 ? '#E6A23C' : '#67C23A' }">
+                {{ kw.masteryRate?.toFixed(1) || 0 }}%
+              </span>
+            </div>
+            <div class="kw-meta">
+              <span>错误 {{ kw.wrongCount }} 题 / 共 {{ kw.totalQuestions }} 题</span>
+              <el-tag :type="kw.weaknessLevel === '高' ? 'danger' : kw.weaknessLevel === '中' ? 'warning' : 'info'" size="small" effect="plain">
+                薄弱 {{ kw.weaknessLevel }}
+              </el-tag>
+            </div>
+            <div v-if="kw.rootCauseNames?.length" class="kw-root-cause">
+              <span class="root-label">根源追溯：</span>
+              <span class="root-names">{{ kw.rootCauseNames.join(' → ') }}</span>
+            </div>
+            <div class="kw-actions">
+              <el-button type="primary" size="small" round @click="router.push('/student/questions?knowledgeId=' + kw.knowledgeId)">
+                专项练习
+              </el-button>
+              <el-button size="small" round @click="openAiPractice(kw.knowledgeId, kw.knowledgeName)" type="warning" plain>
+                ✨ AI练习
+              </el-button>
+              <el-button size="small" round @click="router.push('/student/knowledge-graph')">
+                查看图谱
+              </el-button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="rec-list">
@@ -250,6 +315,14 @@ onMounted(fetchData)
         </div>
       </template>
     </el-dialog>
+
+    <!-- AI 智能练习对话框 -->
+    <AiPracticeDialog
+      v-model:visible="aiDialogVisible"
+      :knowledge-ids="aiKnowledgeIds"
+      :knowledge-name="aiKnowledgeName"
+      @complete="onAiComplete"
+    />
   </div>
 </template>
 
@@ -473,5 +546,128 @@ onMounted(fetchData)
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.rec-summary {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f5ff, #e8f4ff);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #409EFF;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.6;
+  border: 1px solid #d6e4ff;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+
+.kw-section {
+  margin-bottom: 20px;
+}
+
+.kw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.kw-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e8eaec;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.kw-card:hover {
+  border-color: #409EFF;
+  box-shadow: 0 4px 16px rgba(64,158,255,0.12);
+  transform: translateY(-1px);
+}
+
+.kw-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.kw-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  flex: 1;
+}
+
+.kw-mastery-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.kw-mastery-bar {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kw-mastery-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.kw-mastery-text {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+
+.kw-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.kw-root-cause {
+  font-size: 12px;
+  color: #E6A23C;
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.root-label {
+  color: #909399;
+}
+
+.root-names {
+  font-weight: 500;
+}
+
+.kw-actions {
+  display: flex;
+  gap: 6px;
 }
 </style>
